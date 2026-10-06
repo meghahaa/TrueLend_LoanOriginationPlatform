@@ -2,9 +2,17 @@
 
 ## Instructions
 
-<!-- BRD INSTRUCTIONS PLACEHOLDER -->
-<!-- Replace this block with the Business Requirements Document (BRD) instructions for the current project. -->
-<!-- These instructions drive the autonomous /auto loop — be specific about features, acceptance criteria, and constraints. -->
+You are building TrueLend — Loan Origination & Underwriting System (BC-AINE-003).
+
+### Goal
+Implement a policy-driven loan origination and underwriting system for Personal, Vehicle, and Education loan products. Every feature must be built autonomously by agents following TDD and strict architecture layering rules.
+
+### Feature Sprint Tasks & Acceptance Criteria
+1. **Product Catalog (AC-01)**: Sourced from versioned policy files supporting >=3 products (`PERSONAL_LOAN`, `VEHICLE_LOAN`, `EDUCATION_LOAN`).
+2. **Application Intake & Checklist (AC-02, AC-03, AC-05)**: Dynamic document checklist per product, deterministic credit score calculator, and `PolicyViolationException` when income < minimum policy threshold.
+3. **Underwriting Workbench (AC-04, AC-06, AC-10)**: Automated decisions (`AUTO_APPROVE`, `AUTO_REJECT`, `MANUAL_REVIEW`) with policy reason codes, document verification queue, and audited admin override.
+4. **Repayment & Disbursement (AC-07, AC-08, AC-09)**: Fixed-point EMI schedule calculation, disbursement recording, repayment posting, and DPD/NPA delinquency bucket recalculations.
+
 
 ## Constraints
 

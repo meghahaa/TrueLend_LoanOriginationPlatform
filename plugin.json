@@ -1,0 +1,27 @@
+{
+  "name": "truelend-lending-substrate",
+  "version": "1.0.0",
+  "description": "TrueLend Loan Origination & Underwriting Substrate Plugin providing domain agents, skills, hooks, commands, and policy validation.",
+  "author": "AI-Native Engineer Capstone Team",
+  "agents": [
+    ".claude/agents/underwriting-agent.md",
+    ".claude/agents/repayment-schedule-agent.md",
+    ".claude/agents/policy-editor-agent.md",
+    ".claude/agents/policy-validator-agent.md"
+  ],
+  "skills": [
+    ".claude/skills/loan-policy-evaluator",
+    ".claude/skills/repayment-schedule-builder",
+    ".claude/skills/policy-migration-validator",
+    ".claude/skills/archtest-author"
+  ],
+  "commands": [
+    ".claude/commands/validate-policy.md",
+    ".claude/commands/check-invariants.md"
+  ],
+  "hooks": [
+    ".claude/hooks/policy-immutability-check.sh",
+    ".claude/hooks/interest-precision-check.sh",
+    ".claude/hooks/repayment-invariant-check.sh"
+  ]
+}
