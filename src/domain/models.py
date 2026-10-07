@@ -1,11 +1,59 @@
 """
-Domain dataclasses for policy and product. Pure; no framework or IO imports.
+Domain dataclasses for policy, product, documents, loans, and disbursements.
+Pure; no framework or IO imports.
 Money fields stored as Decimal; age/tenure as int.
 """
 from __future__ import annotations
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import Dict, List
+from enum import Enum
+from typing import Dict, List, Optional
+
+
+class DocumentStatus(str, Enum):
+    MISSING = "MISSING"
+    UPLOADED = "UPLOADED"
+    VERIFIED = "VERIFIED"
+    REJECTED = "REJECTED"
+
+
+class ApplicationStatus(str, Enum):
+    SUBMITTED = "SUBMITTED"
+    MANUAL_REVIEW = "MANUAL_REVIEW"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    DISBURSED = "DISBURSED"
+
+
+@dataclass(frozen=True)
+class Document:
+    doc_type: str
+    filename: Optional[str] = None
+    status: DocumentStatus = DocumentStatus.MISSING
+    rejection_reason: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class AuditEntry:
+    actor_user_id: str
+    action: str
+    application_id: Optional[str] = None
+    doc_type: Optional[str] = None
+    reason: Optional[str] = None
+    comment: Optional[str] = None
+    timestamp: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class DisbursementRecord:
+    disbursement_id: str
+    application_id: str
+    amount: Decimal
+    funding_source: str = "STUB_FUNDING_ACCOUNT_01"
+    reference: str = ""
+    disbursed_at: str = ""
+    released_by: str = ""
+    status: str = "SUCCESS"
 
 
 @dataclass(frozen=True)
