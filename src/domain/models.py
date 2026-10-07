@@ -1,5 +1,5 @@
 """
-Domain dataclasses for policy, product, documents, and loans.
+Domain dataclasses for policy, product, documents, loans, and disbursements.
 Pure; no framework or IO imports.
 Money fields stored as Decimal; age/tenure as int.
 """
@@ -42,6 +42,18 @@ class AuditEntry:
     reason: Optional[str] = None
     comment: Optional[str] = None
     timestamp: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class DisbursementRecord:
+    disbursement_id: str
+    application_id: str
+    amount: Decimal
+    funding_source: str = "STUB_FUNDING_ACCOUNT_01"
+    reference: str = ""
+    disbursed_at: str = ""
+    released_by: str = ""
+    status: str = "SUCCESS"
 
 
 @dataclass(frozen=True)

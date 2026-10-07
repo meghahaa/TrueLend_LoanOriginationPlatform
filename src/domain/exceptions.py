@@ -25,3 +25,18 @@ class DocumentsNotVerifiedException(Exception):
     def __init__(self, message: str = "DOCUMENTS_NOT_VERIFIED") -> None:
         self.code = "DOCUMENTS_NOT_VERIFIED"
         super().__init__(message)
+
+
+class AlreadyDisbursedException(Exception):
+    """Raised when disbursement is attempted on an already disbursed loan."""
+
+    def __init__(self, message: str = "ALREADY_DISBURSED") -> None:
+        self.code = "ALREADY_DISBURSED"
+        super().__init__(message)
+
+
+class InvalidApplicationStateException(Exception):
+    """Raised when an action is incompatible with the application's current state."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
