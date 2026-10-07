@@ -1,13 +1,8 @@
-# Source Code Guidelines — src/
-
-## Architecture Rules
-- Backend source code resides under `src/main/java` (or python/node equivalent).
-- Must adhere strictly to 3-tier layering: `controllers` -> `services` -> `domain` & `repositories`.
-- Forbidden: Domain models importing controllers or UI components.
-- Forbidden: Controllers performing direct business calculation or database SQL execution.
-
-## Coding Standards
-- All money calculations MUST use `BigDecimal` with explicit scale (2) and rounding (`HALF_UP`).
-- No floating-point `double` or `float` for currency.
-- All public service and controller methods MUST log entry and exit with structured correlation IDs.
-- Handle exceptions via custom domain exceptions (e.g. `PolicyViolationException`, `ApplicationNotFoundException`).
+# src/ — backend module
+Python package `src`. Entry: `src/__main__.py` (`python -m src`), app factory `src/main.py`.
+- Layers: `api/` → `services/` → `repositories/` → `domain/`. Never import upward or skip `services` from `api`.
+- Config via env with safe defaults (`TRUELEND_DB`, `TRUELEND_POLICY_DIR`, port 8000). No secrets.
+- Wiring (dependency injection) happens only in `src/main.py`.
+- Migrations: `migrations/NNN_name.sql`, append-only, applied in order at startup, tracked in `schema_migrations`.
+- Startup: apply migrations → seed if empty (`src/seed.py`, synthetic data per `specs/app_spec.md` §7) → serve.
+- Pin dependencies in `requirements.txt` (fastapi, uvicorn, pydantic, pytest, pytest-cov, httpx, import-linter).
