@@ -123,12 +123,12 @@ def test_ac04a_auto_reject_has_default(tmp_path):
 @pytest.mark.ac("AC-04a")
 def test_ac04a_auto_reject_low_score(tmp_path):
     client = _make_client(tmp_path)
-    # age=18, income=25000, LATE_PAYMENTS, no default → 300+20+100+0-0=420 < 550 reject
+    # age=21 (passes policy gate min_age=21), income=25000, LATE_PAYMENTS, no default → 300+40+100+0-0=440 < 550 reject
     payload = {
         **_APPROVE_PAYLOAD,
         "applicant": {
             **_APPROVE_PAYLOAD["applicant"],
-            "age": 18,
+            "age": 21,
             "monthly_income": "25000.00",
             "credit_history": "LATE_PAYMENTS",
             "has_default": False,
@@ -381,3 +381,41 @@ def test_ac10b_override_non_auto_reject_returns_409(tmp_path):
         headers=_ADMIN,
     )
     assert resp.status_code == 409
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AC-04c — Policy v002 changes approve_score
+# ─────────────────────────────────────────────────────────────────────────────
+
+@pytest.mark.ac("AC-04c")
+def test_ac04c_policy_v002_thresholds_applied(tmp_path):
+    """v002 changes approve_score: new application uses v002, old application retains v001."""
+    client = _make_client(tmp_path)
+    # 1. Submit on v001 (score 740 >= 720 → AUTO_APPROVE, v001)
+    app1 = _submit(client, _APPROVE_PAYLOAD).json()
+    assert app1["policy_version"] == 1
+    assert app1["decision"] == "AUTO_APPROVE"
+
+    # 2. Publish v002 with approve_score = 800 on PERSONAL
+    publish_resp = client.post(
+        "/admin/policies",
+        json={
+            "products": {
+                "PERSONAL": {"approve_score": 800}
+            },
+            "change_note": "Raise PERSONAL approve_score to 800",
+        },
+        headers=_ADMIN,
+    )
+    assert publish_resp.status_code == 201
+
+    # 3. Submit new app with same payload (score 740 < 800 → MANUAL_REVIEW, v002)
+    app2 = _submit(client, _APPROVE_PAYLOAD).json()
+    assert app2["policy_version"] == 2
+    assert app2["decision"] == "MANUAL_REVIEW"
+
+    # 4. Old app still shows v001
+    old_app = client.get(f"/applications/{app1['id']}", headers=_CUST).json()
+    assert old_app["policy_version"] == 1
+    assert old_app["decision"] == "AUTO_APPROVE"
+

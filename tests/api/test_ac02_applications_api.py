@@ -259,7 +259,9 @@ def test_ac05_income_below_min_reason_code(tmp_path):
     }
     resp = client.post("/applications", json=payload, headers=_CUSTOMER_HEADERS)
     body = resp.json()
-    assert "INCOME_BELOW_MIN" in body.get("reason_codes", [])
+    # PolicyViolationException maps to 422 with detail.reason_codes
+    codes = body.get("reason_codes") or body.get("detail", {}).get("reason_codes", [])
+    assert "INCOME_BELOW_MIN" in codes
 
 
 @pytest.mark.ac("AC-05")
@@ -303,7 +305,9 @@ def test_ac05b_age_below_min_returns_422(tmp_path):
     }
     resp = client.post("/applications", json=payload, headers=_CUSTOMER_HEADERS)
     assert resp.status_code == 422
-    assert "AGE_OUT_OF_RANGE" in resp.json().get("reason_codes", [])
+    body = resp.json()
+    codes = body.get("reason_codes") or body.get("detail", {}).get("reason_codes", [])
+    assert "AGE_OUT_OF_RANGE" in codes
 
 
 @pytest.mark.ac("AC-05b")
@@ -319,6 +323,7 @@ def test_ac05b_multiple_violations_all_reported(tmp_path):
     }
     resp = client.post("/applications", json=payload, headers=_CUSTOMER_HEADERS)
     assert resp.status_code == 422
-    codes = resp.json().get("reason_codes", [])
+    body = resp.json()
+    codes = body.get("reason_codes") or body.get("detail", {}).get("reason_codes", [])
     assert "AGE_OUT_OF_RANGE" in codes
     assert "INCOME_BELOW_MIN" in codes
