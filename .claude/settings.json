@@ -51,6 +51,15 @@
             "timeout": 5000
           }
         ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/policy-immutability-check.js\""
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -101,6 +110,19 @@
             "type": "command",
             "command": "node .claude/hooks/track-writes.js",
             "timeout": 5000
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/money-precision-check.js\""
+          },
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/pii-log-check.js\""
           }
         ]
       },

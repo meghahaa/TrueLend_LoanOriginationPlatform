@@ -1,29 +1,24 @@
 ---
 name: loan-policy-evaluator
-description: Evaluates loan applications against versioned policy rules, computes credit scores, and returns underwriting decisions.
+description: Use when implementing or testing TrueLend eligibility, credit-score stub, underwriting decision or reason codes against the versioned policy file. Provides the evaluation order, formulas and test matrix so rules are never hard-coded.
 ---
+# Loan policy evaluator
 
-# Loan Policy Evaluator Skill
+**Source of truth:** `specs/application-intake_spec.md` (gate + score) and `specs/underwriting_spec.md` (decision). Policy values come from the active `policies/loan_policy.vNNN.json`; never hard-code thresholds.
 
-This skill provides step-by-step instructions for evaluating loan applications against versioned underwriting policies.
+## Evaluation order
+1. Load active policy → product block (unknown product → 422 error code `UNKNOWN_PRODUCT` (an error code, not a reason code)).
+2. Gate: income, age, amount, tenure → collect all violations → `PolicyViolationException(reason_codes, policy_version)`.
+3. Score (integer table lookup, clamp 300–900).
+4. FOIR = EMI / monthly_income (Decimal).
+5. Decision: default → reject; score < reject → reject; score ≥ approve and FOIR ≤ max → approve; else manual review (+ band / FOIR reason).
 
-## Execution Steps
+## Build pattern
+- Pure functions taking `(policy_product, applicant)`; return frozen dataclasses with `decision`, `reason_codes`, `score`, `policy_version`.
+- Table-driven code for score bands (data, not if-chains) so tests can parametrise.
 
-1. **Load Active Policy**:
-   - Parse active policy version file (e.g., `src/main/resources/policies/policy-v1.0.json`).
-   - Extract product-specific thresholds (`minIncome`, `minCreditScore`, `autoApproveScore`, `autoRejectScore`).
+## Test matrix (each case → one test with `@pytest.mark.ac`)
+Boundaries: income min−0.01 / min; age min−1 / min / max / max+1; score = reject−1 / reject / approve−1 / approve; FOIR = max / max+0.0001; `has_default` with high score; policy v002 with changed threshold; every reason code produced at least once.
 
-2. **Income Threshold Check**:
-   - Compare applicant income against product minimum income.
-   - If `income < minIncome`, throw `PolicyViolationException` with code `INCOME_BELOW_MINIMUM_THRESHOLD` (AC-05).
-
-3. **Deterministic Credit Scoring**:
-   - Compute score using formula: $600 + (\text{Income} / 1000 \times 2) + (\text{Age} \times 1.5) - (\text{Defaults} \times 150)$ clamped to $[300, 850]$ (AC-03).
-
-4. **Underwriting Decisioning**:
-   - If score >= `autoApproveScore` and defaults == 0 -> `AUTO_APPROVE` (`AUTO_APPROVE_LOW_RISK`).
-   - If score < `autoRejectScore` or defaults > 1 -> `AUTO_REJECT` (`AUTO_REJECT_HIGH_RISK`).
-   - Otherwise -> `MANUAL_REVIEW` (`MANUAL_REVIEW_BORDERLINE`) (AC-04).
-
-5. **Generate Audit Record**:
-   - Record decision outcome, reason code, active policy version ID, and timestamp.
+## Pitfalls
+Comparing money as strings; using `float` for FOIR; reading thresholds once at import (must be per-request active policy); emitting a reason code not in the enum.

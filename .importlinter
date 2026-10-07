@@ -1,0 +1,36 @@
+[importlinter]
+root_package = src
+include_external_packages = True
+
+# Layers: higher may import lower, never the reverse.
+[importlinter:contract:layers]
+name = TrueLend 4-layer architecture (api -> services -> repositories -> domain)
+type = layers
+layers =
+    src.api
+    src.services
+    src.repositories
+    src.domain
+
+# Controllers must go through services (the layers contract alone would allow api -> repositories).
+[importlinter:contract:api-uses-services-only]
+name = Controllers must not import repositories directly
+type = forbidden
+source_modules =
+    src.api
+forbidden_modules =
+    src.repositories
+# api -> services -> repositories is the intended chain; only a DIRECT api -> repositories import is a violation.
+allow_indirect_imports = True
+
+# Domain stays pure: no web framework, no database driver.
+[importlinter:contract:domain-is-pure]
+name = Domain must not depend on frameworks or IO drivers
+type = forbidden
+source_modules =
+    src.domain
+forbidden_modules =
+    fastapi
+    starlette
+    uvicorn
+    sqlite3

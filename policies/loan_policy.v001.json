@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "effective_from": "2026-01-01",
+  "created_by": "seed",
+  "change_note": "Initial synthetic policy. Append-only: create v002+ instead of editing.",
+  "bucket_thresholds": { "dpd_30": 30, "dpd_60": 60, "dpd_90": 90, "npa": 180 },
+  "products": {
+    "PERSONAL": {
+      "display_name": "Personal Loan",
+      "min_monthly_income": "25000.00",
+      "min_age": 21, "max_age": 60,
+      "min_amount": "50000.00", "max_amount": "1000000.00",
+      "min_tenure_months": 12, "max_tenure_months": 60,
+      "annual_rate_percent": "12.50",
+      "approve_score": 720, "reject_score": 550,
+      "max_foir": "0.50",
+      "required_documents": ["ID_PROOF", "ADDRESS_PROOF", "SALARY_SLIP", "BANK_STATEMENT"]
+    },
+    "VEHICLE": {
+      "display_name": "Vehicle Loan",
+      "min_monthly_income": "30000.00",
+      "min_age": 21, "max_age": 65,
+      "min_amount": "100000.00", "max_amount": "2500000.00",
+      "min_tenure_months": 12, "max_tenure_months": 84,
+      "annual_rate_percent": "9.50",
+      "approve_score": 700, "reject_score": 520,
+      "max_foir": "0.55",
+      "required_documents": ["ID_PROOF", "ADDRESS_PROOF", "SALARY_SLIP", "VEHICLE_QUOTATION"]
+    },
+    "EDUCATION": {
+      "display_name": "Education Loan",
+      "min_monthly_income": "15000.00",
+      "min_age": 18, "max_age": 35,
+      "min_amount": "100000.00", "max_amount": "4000000.00",
+      "min_tenure_months": 24, "max_tenure_months": 120,
+      "annual_rate_percent": "8.50",
+      "approve_score": 680, "reject_score": 500,
+      "max_foir": "0.60",
+      "required_documents": ["ID_PROOF", "ADDRESS_PROOF", "ADMISSION_LETTER", "FEE_STRUCTURE", "CO_APPLICANT_INCOME_PROOF"]
+    }
+  }
+}

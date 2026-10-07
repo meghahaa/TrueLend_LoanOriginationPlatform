@@ -13,6 +13,7 @@ tools:
   - mcp__plugin_playwright_playwright__browser_hover
   - mcp__plugin_playwright_playwright__browser_press_key
   - mcp__plugin_playwright_playwright__browser_close
+model: haiku
 ---
 
 # Design Critic Agent

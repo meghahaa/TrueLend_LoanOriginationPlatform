@@ -1,13 +1,8 @@
-# Testing Guidelines & Discipline — tests/
-
-## TDD Rules & Principles
-- **Test-Driven Development (TDD) Mandatory**: Red -> Green -> Refactor. Tests MUST be written and fail before production implementation code is generated.
-- **AC Tagging**: Every test verifying a functional acceptance criteria MUST be tagged with `@TestTag("AC-NN")` or `@AC("AC-NN")`.
-- **100% Coverage Goal**: Minimum ratchet threshold is 80%. Every line of business logic must be double-checked by unit/integration tests.
-- **No Test Modifications to Pass**: Never modify or weaken test assertions to make broken implementation code pass. Fix the implementation under test.
-
-## Test Directory Structure
-- `tests/unit/`: Fast unit tests for domain entities, policy evaluators, and math calculators.
-- `tests/integration/`: Spring Boot / REST API integration tests.
-- `tests/architecture/`: ArchUnit / structural tests enforcing layering rules and immutable policy constraints (NFR-08).
-- `tests/e2e/`: Playwright UI automated tests.
+# tests/
+- `tests/unit/` rules + services (≥ 20 tests, ≥ 10 files overall across the repo); `tests/api/` TestClient integration; `tests/architecture/` structural; `tests/e2e/` Playwright.
+- Register marker `ac(id)` in `pyproject.toml`; every test carries `@pytest.mark.ac("AC-NN")` or `("NFR-NN")` and name `test_ac05_…`. Every id in `specs/` must be referenced by ≥ 1 test (`python scripts/ac_coverage.py`).
+- Use a fixed `FakeClock` and in-memory SQLite; no network, no sleeps.
+- Test data: obviously synthetic (`PAN TESTP1234X`, Aadhaar `9999 0000 0001`).
+- `tests/architecture/` must contain at least: (1) layer imports respected, (2) domain has no framework/IO imports, (3) no `float` in money modules (AST scan), (4) policy files/migrations immutable (hash check vs git-tracked baseline), (5) EMI invariant property over a grid of principal/rate/tenure, (6) no PAN/Aadhaar in log output.
+- Coverage: `coverage.xml` committed from the last green run; threshold 80 %.
+- Playwright: desktop + mobile viewport; `toHaveScreenshot` into `tests/e2e/snapshots/`.

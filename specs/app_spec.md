@@ -1,66 +1,78 @@
-# Application Master Specification — TrueLend Loan Origination & Underwriting System
+# TrueLend — Root Spec (app_spec.md)
+Status: authoritative. Feature specs: `product-catalog`, `application-intake`, `underwriting`, `repayment`, `disbursement`, `admin-portfolio` (`specs/<name>_spec.md`).
+Business context: `docs/business-case.md`. Design: `docs/architecture.md`.
 
-## 1. Overview & System Purpose
-TrueLend is a configurable, policy-driven loan origination and underwriting system. The system enables Horizon Bank to define and launch new loan products with custom policy rules without modifying backend application source code. The end-to-end flow covers product catalog management, application submission, document requirement generation, credit scoring, underwriting decisioning, admin overrides, repayment scheduling, disbursement, and repayment posting with DPD bucket recalculation.
+## 1. Purpose and scope
+A policy-driven loan origination platform: a customer applies for a Personal, Vehicle or Education loan; rules from a versioned policy file drive underwriting; approved loans get an EMI schedule, a stubbed disbursement, and repayments that update outstanding principal and a delinquency bucket. Business users change thresholds by publishing a new policy version — no code change.
 
----
+Out of scope: real bureau/OCR/payment rails, collections, FX, production deployment/secrets.
 
-## 2. Functional Scope & Feature Modules
+## 2. Actors and auth (demo)
+| Token | User id | Role |
+|---|---|---|
+| `demo-customer-1` | `cust-001` | CUSTOMER |
+| `demo-customer-2` | `cust-002` | CUSTOMER |
+| `demo-underwriter-1` | `uw-001` | UNDERWRITER |
+| `demo-admin-1` | `adm-001` | ADMIN |
+Header: `Authorization: Bearer <token>`. Missing/unknown → 401; wrong role/owner → 403. Public: `GET /health`, `GET /products`.
 
-### 2.1 Product Catalog Module (`specs/product-catalog_spec.md`)
-- Defines loan products (Personal, Vehicle, Education).
-- Sourced from versioned policy files (e.g., `policy-v1.0.json`).
-- Specifies product-specific minimum income, credit score thresholds, interest rate ranges, and maximum loan amounts.
+## 3. Stack and run
+Python 3.11+ / FastAPI / SQLite; React + Vite + TS frontend. `python -m src` is the single run command: applies migrations, seeds if empty, builds `frontend/dist` if missing and `npm` exists, serves API + UI on `:8000`. README must contain a quick-start.
 
-### 2.2 Application Intake & Credit Scoring Module (`specs/application-intake_spec.md`)
-- Allows applicants to select a product, input financial details, and submit documents.
-- Dynamically generates document checklist per product type.
-- Computes deterministic credit score based on applicant age, income, and credit history flags.
-- Enforces policy validation throwing `PolicyViolationException` when income is below product threshold.
+## 4. Enums and shared definitions
+- Product: `PERSONAL`, `VEHICLE`, `EDUCATION`
+- Decision: `AUTO_APPROVE`, `AUTO_REJECT`, `MANUAL_REVIEW`
+- Application status: `SUBMITTED`(transient), `MANUAL_REVIEW`, `APPROVED`, `REJECTED`, `DISBURSED`
+- Document status: `MISSING`, `UPLOADED`, `VERIFIED`, `REJECTED`
+- Credit history: `CLEAN`, `THIN`, `LATE_PAYMENTS`; flag `has_default` (bool)
+- Bucket: `CURRENT`, `DPD-30`, `DPD-60`, `DPD-90`, `NPA`
+- Reason codes (only these): `INCOME_BELOW_MIN`, `AGE_OUT_OF_RANGE`, `AMOUNT_OUT_OF_RANGE`, `TENURE_OUT_OF_RANGE`, `SCORE_ABOVE_APPROVE`, `SCORE_BELOW_REJECT`, `SCORE_IN_REVIEW_BAND`, `FOIR_EXCEEDED`, `PRIOR_DEFAULT`, `MANUAL_APPROVED`, `MANUAL_REJECTED`, `ADMIN_OVERRIDE`
+- Money: `Decimal`, 2 dp, ROUND_HALF_UP, strings on the wire. Currency INR (single, implicit).
+- Active policy = highest `policies/loan_policy.vNNN.json`. Every decision stores its `policy_version`.
 
-### 2.3 Underwriting Engine Module (`specs/underwriting_spec.md`)
-- Evaluates submitted applications against active policy version rules.
-- Yields decisions: `AUTO_APPROVE`, `AUTO_REJECT`, `MANUAL_REVIEW` with explicit reason codes (e.g., `INC_BELOW_MIN`, `SCORE_HIGH_PASS`).
-- Underwriter document verification queue (`VERIFIED` / `REJECTED`).
-- Audited admin override allowing override of `AUTO_REJECT` decisions with comments and reason codes.
+## 5. Non-functional requirements (each needs a test tagged with its id)
+| ID | Requirement | Verified by |
+|---|---|---|
+| NFR-01 | Money is fixed-point `Decimal`, never `float` | AST scan test in `tests/architecture/` + unit tests |
+| NFR-02 | Approved policy versions and repayment schedules are append-only | repo has no UPDATE/DELETE on them; hash-baseline test |
+| NFR-03 | Synthetic PAN/Aadhaar and salary documents never logged | log-capture test |
+| NFR-04 | Auth enforced at controller layer; underwriter/admin actions audited (user id + timestamp) | API tests; import test (services don't import api) |
+| NFR-05 | DB and policy migrations are append-only | hash-baseline test of `migrations/` and `policies/` |
+| NFR-06 | Structured JSON logs with correlation id | log-capture test |
+| NFR-07 | `/health` returns 200 within 1 s of startup | API test with timing assertion |
+| NFR-08 | Architecture rules are automated tests (policy immutable, EMI invariant, layering) | `tests/architecture/` |
 
-### 2.4 Repayment & Amortization Module (`specs/repayment_spec.md`)
-- Generates equal monthly installment (EMI) schedules using exact fixed-point standard formula.
-- Guarantees invariant: `sum(principal_payments) + sum(interest_payments) == total_payable`.
-- Posts incoming customer repayments, reduces outstanding principal balance, and recalculates DPD/NPA delinquency buckets (`CURRENT`, `DPD-30`, `DPD-60`, `DPD-90`, `NPA`).
+## 6. API summary
+| Method & path | Role | Feature |
+|---|---|---|
+| `GET /health` | public | NFR-07 |
+| `GET /products` | public | product-catalog |
+| `POST /applications` | CUSTOMER | application-intake |
+| `GET /applications/{id}` | owner/staff | application-intake |
+| `POST /applications/{id}/documents` | owner | application-intake |
+| `GET /underwriter/queue` | UNDERWRITER, ADMIN | underwriting |
+| `POST /applications/{id}/documents/{doc_type}/verify` | UNDERWRITER, ADMIN | underwriting |
+| `POST /applications/{id}/decision` | UNDERWRITER, ADMIN | underwriting |
+| `POST /admin/applications/{id}/override` | ADMIN | underwriting |
+| `GET /applications/{id}/schedule` | owner/staff | repayment |
+| `POST /applications/{id}/repayments` | owner/staff | repayment |
+| `POST /admin/jobs/eod-buckets` | ADMIN | repayment |
+| `POST /applications/{id}/disburse` | UNDERWRITER, ADMIN | disbursement |
+| `GET /admin/applications?status=&product=` | ADMIN | admin-portfolio |
+| `GET /admin/portfolio` | ADMIN | admin-portfolio |
+| `GET /admin/audit` | ADMIN | admin-portfolio |
+| `GET /admin/policies`, `POST /admin/policies` | ADMIN | product-catalog |
+Error shape: `{"code": "...", "message": "...", "reason_codes": [...], "policy_version": 1}` (reason fields only when relevant).
 
-### 2.5 Disbursement Module (`specs/disbursement_spec.md`)
-- Processes approved applications for disbursement.
-- Captures released amount and stubbed funding source metadata.
+## 7. Seed data (synthetic, created at first start)
+3 products from the active policy plus customers `cust-001`, `cust-002` and 6 applications: (1) PERSONAL AUTO_APPROVE → disbursed, 2 on-time payments, `CURRENT`; (2) VEHICLE disbursed, no payments, first due 75 days ago → `DPD-60`; (3) PERSONAL disbursed, first due 200 days ago → `NPA`; (4) EDUCATION `MANUAL_REVIEW` with documents `UPLOADED`; (5) PERSONAL `AUTO_REJECT` (override demo); (6) VEHICLE `APPROVED`, not yet disbursed. Seeded disbursed loans (1–3) have all required documents `VERIFIED` (disbursement precondition). Dates are computed relative to today. PAN `TESTP1234X`-style, Aadhaar `9999 0000 000N`.
 
----
+## 8. Sprint plan (guidance for planner)
+| Sprint | Scope | ACs |
+|---|---|---|
+| S1 | project skeleton, migrations, logging/health/auth, policy repo, catalog, scoring, intake, decision | AC-01..05, NFR-03..08 |
+| S2 | document verification, manual decision, override+audit, EMI schedule, disbursement, repayment, buckets, EOD, portfolio | AC-06..10, NFR-01,02 |
+| S3 | React UI (Apply/Track/Repay/Workbench/Policy Editor/Dashboard), Playwright + snapshots, seed, README | UI for all journeys |
 
-## 3. Master Acceptance Criteria Matrix
-
-| ID | Feature | Specification Summary | Verification Method |
-|---|---|---|---|
-| **AC-01** | Product Catalog | Catalog supports >= 3 products (Personal, Vehicle, Education) with distinct rule sets from versioned policy file. | `ProductCatalogServiceTest` |
-| **AC-02** | Application Intake | Customer applies for loan; required document checklist generated dynamically per product. | `ApplicationIntakeServiceTest` |
-| **AC-03** | Credit Scoring | Deterministic credit scoring from age, income, and credit history flags. | `CreditScoringStubTest` |
-| **AC-04** | Underwriting Decision | Underwriting returns `AUTO_APPROVE` / `AUTO_REJECT` / `MANUAL_REVIEW` with reason codes from active policy version. | `UnderwritingEngineTest` |
-| **AC-05** | Policy Violation Exception | Application fails with `PolicyViolationException` when income < minimum threshold for selected product. | `PolicyViolationExceptionTest` |
-| **AC-06** | Document Queue | Underwriter document queue allows marking documents `VERIFIED` / `REJECTED` with reason. | `DocumentVerificationServiceTest` |
-| **AC-07** | EMI Schedule Calculation | Repayment schedule generated using EMI formula; sum of principal and interest equals total payable. | `EMICalculatorTest` |
-| **AC-08** | Disbursement Recording | Disbursement records released amount and stubbed funding source. | `DisbursementServiceTest` |
-| **AC-09** | Repayment Posting & Bucketing | Repayment posting reduces principal; bucket recalculated (`CURRENT`, `DPD-30`, `DPD-60`, `DPD-90`, `NPA`). | `RepaymentServiceTest` |
-| **AC-10** | Admin Override Audit | Admin can list applications, filter by status/product, override `AUTO_REJECT` with audited comment/reason code. | `AdminOverrideAuditTest` |
-
----
-
-## 4. Master Non-Functional Requirements (NFRs)
-
-| ID | Requirement Title | Description | Structural Guardrail |
-|---|---|---|---|
-| **NFR-01** | Fixed-Point Financial Precision | All monetary values (principal, interest, EMI, balance) MUST use `BigDecimal` / `decimal` — never floating-point `double`/`float`. | Checked via `interest-precision-check.sh` & unit tests. |
-| **NFR-02** | Append-Only Policies & Schedules | Approved policy versions and generated repayment schedules are append-only. No UPDATE or DELETE allowed. | DB constraints & ArchUnit assertions. |
-| **NFR-03** | PII Masking & Logging Safety | Synthetic identifiers (PAN, Aadhaar) and salary documents are NEVER written to logs or stdout. | Checked via `detect-secrets.js` & log analyzer. |
-| **NFR-04** | Controller Auth & Audit Trail | Auth boundary enforced at controller layer; underwriter/admin actions recorded with user ID, timestamp, and action. | Spring Security / Middleware + Audit log table. |
-| **NFR-05** | Append-Only Migrations | DB schema and policy migrations must be strictly append-only. | Migration linter check. |
-| **NFR-06** | Structured JSON Logging | Structured JSON logging with request correlation ID in every log entry. | MDC correlation filter + Jackson JSON encoder. |
-| **NFR-07** | Fast Startup Health Endpoint | `/actuator/health` or `/health` returns HTTP 200 within 1 second of successful startup. | Health check integration test. |
-| **NFR-08** | Architecture Rule Enforcement | Architectural structural constraints (layer separation, EMI invariant formulas) enforced via automated tests. | `ArchitectureRulesTest.java`. |
+## 9. Definition of Done (per sprint)
+Tests green with ≥ 80 % coverage, `lint-imports` clean, `scripts/ac_coverage.py` shows no missing ids, hooks passed, evaluator report in `specs/reviews/`, sprint contract in `sprint-contracts/`, merged by PR.
