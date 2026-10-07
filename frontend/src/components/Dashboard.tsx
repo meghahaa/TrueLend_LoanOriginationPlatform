@@ -74,6 +74,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ token }) => {
 
       {error && <div className="badge badge-REJECTED" style={{ marginBottom: '1rem' }}>{error}</div>}
       {successMsg && <div className="badge badge-APPROVED" style={{ marginBottom: '1rem' }}>{successMsg}</div>}
+      {loading && <p>Loading application portfolio...</p>}
 
       {/* Metrics Row */}
       <div className="form-row" style={{ marginBottom: '1.5rem' }}>

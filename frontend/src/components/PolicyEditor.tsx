@@ -203,6 +203,29 @@ export const PolicyEditor: React.FC<PolicyEditorProps> = ({ token }) => {
 
           <div className="form-row">
             <div className="form-group">
+              <label>Min Tenure (months):</label>
+              <input
+                type="number"
+                value={minTenure}
+                onChange={(e) => setMinTenure(e.target.value)}
+                data-testid="min-tenure-input"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Max Tenure (months):</label>
+              <input
+                type="number"
+                value={maxTenure}
+                onChange={(e) => setMaxTenure(e.target.value)}
+                data-testid="max-tenure-input"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
               <label>Min Amount (INR):</label>
               <input
                 type="text"

@@ -17,7 +17,7 @@ export const Workbench: React.FC<WorkbenchProps> = ({ token }) => {
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Decision state
+  // Decision & rejection reason state
   const [decisionComment, setDecisionComment] = useState<string>('Verified all required information');
   const [rejectReason, setRejectReason] = useState<string>('Document quality does not meet standards');
 
@@ -166,6 +166,17 @@ export const Workbench: React.FC<WorkbenchProps> = ({ token }) => {
           </div>
 
           <h4 style={{ marginTop: '1.5rem' }}>Uploaded Documents Verification</h4>
+          <div className="form-group" style={{ marginTop: '0.5rem', maxWidth: '400px' }}>
+            <label>Rejection Reason (if rejecting a document):</label>
+            <input
+              type="text"
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="e.g. Blurry or expired document"
+              data-testid="document-reject-reason-input"
+            />
+          </div>
+
           <table className="responsive-cards" style={{ marginTop: '0.5rem' }}>
             <thead>
               <tr>
