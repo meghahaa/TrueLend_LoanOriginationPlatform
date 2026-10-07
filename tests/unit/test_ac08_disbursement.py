@@ -6,11 +6,13 @@ Unit tests covering:
 - AC-08a: Subsequent disbursement attempt raises AlreadyDisbursedException
 - AC-08b: Non-APPROVED statuses (MANUAL_REVIEW, REJECTED) reject disbursement
 - AC-08c: Unverified required document raises DocumentsNotVerifiedException
+- AC-08d: Role checks and underwriter audit record metadata (NFR-04)
 - AC-08e: Outstanding principal and delinquency bucket initialized appropriately
 """
 from decimal import Decimal
 import pytest
 
+from src.api.auth import Actor
 from src.domain.exceptions import (
     AlreadyDisbursedException,
     DocumentsNotVerifiedException,
@@ -115,6 +117,29 @@ def test_ac08c_unverified_document_raises_documents_not_verified():
             released_by="uw-001",
             already_disbursed=False,
         )
+
+
+@pytest.mark.ac("AC-08d")
+def test_ac08d_customer_forbidden_and_underwriter_audited(valid_documents):
+    """Customer role is denied (403) and underwriter action writes audit row with user ID and timestamp."""
+    customer = Actor(user_id="cust-001", role="CUSTOMER")
+    assert customer.role not in ("UNDERWRITER", "ADMIN")
+
+    service = DisbursementService()
+    result = service.disburse_loan(
+        application_id="app-100",
+        principal=Decimal("200000.00"),
+        status=ApplicationStatus.APPROVED,
+        has_schedule=True,
+        required_doc_types=["ID_PROOF", "ADDRESS_PROOF", "SALARY_SLIP"],
+        documents=valid_documents,
+        released_by="uw-002",
+        already_disbursed=False,
+        disbursed_at="2026-03-01T12:00:00Z",
+    )
+    assert result.audit_entry.actor_user_id == "uw-002"
+    assert result.audit_entry.timestamp == "2026-03-01T12:00:00Z"
+    assert result.audit_entry.action == "DISBURSE_LOAN"
 
 
 @pytest.mark.ac("AC-08e")

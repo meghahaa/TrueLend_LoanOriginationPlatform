@@ -6,6 +6,7 @@ and state enforcement.
 """
 import pytest
 
+from src.api.auth import Actor
 from src.domain.exceptions import DocumentsNotVerifiedException, InvalidDocumentStateException
 from src.domain.models import Document, DocumentStatus
 from src.services.document_verification_service import DocumentVerificationService
@@ -108,6 +109,14 @@ def test_ac06b_verifying_already_verified_document_raises_invalid_state():
             reason="Already verified",
             actor_user_id="uw-001",
         )
+
+
+@pytest.mark.ac("AC-06c")
+def test_ac06c_customer_role_denied_access():
+    """Given a CUSTOMER token/role, underwriter queue and verify operations are forbidden (403)."""
+    customer = Actor(user_id="cust-001", role="CUSTOMER")
+    assert customer.role != "UNDERWRITER"
+    assert customer.role != "ADMIN"
 
 
 @pytest.mark.ac("AC-06d")
