@@ -9,10 +9,10 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any, Dict, List, Optional
 
-from src.api.auth import Actor
 from src.domain.credit_score import calculate_credit_score
 from src.domain.eligibility_rules import check_policy_gate
 from src.domain.exceptions import PolicyViolationException
+from src.domain.models import Actor
 from src.domain.money import to_money
 from src.domain.underwriting_decision import make_underwriting_decision
 from src.repositories.application_repository import ApplicationRepository

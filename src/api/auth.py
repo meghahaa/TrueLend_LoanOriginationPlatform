@@ -4,15 +4,10 @@ Bearer token → Actor. Roles: CUSTOMER, UNDERWRITER, ADMIN.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Callable, Optional
 from fastapi import Depends, HTTPException, Header
 
-
-@dataclass(frozen=True)
-class Actor:
-    user_id: str
-    role: str  # "CUSTOMER" | "UNDERWRITER" | "ADMIN"
+from src.domain.models import Actor
 
 
 # Demo token map (synthetic data only — per app_spec.md §2)

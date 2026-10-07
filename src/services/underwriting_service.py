@@ -8,13 +8,12 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional
 
-from src.api.auth import Actor
 from src.domain.exceptions import (
     DocumentsNotVerifiedException,
     InvalidApplicationStateException,
     InvalidDocumentStateException,
 )
-from src.domain.models import Document, DocumentStatus
+from src.domain.models import Actor, Document, DocumentStatus
 from src.repositories.application_repository import ApplicationRepository
 from src.repositories.policy_repository import PolicyRepository
 

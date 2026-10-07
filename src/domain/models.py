@@ -26,6 +26,13 @@ class ApplicationStatus(str, Enum):
 
 
 @dataclass(frozen=True)
+class Actor:
+    user_id: str
+    role: str  # "CUSTOMER" | "UNDERWRITER" | "ADMIN"
+
+
+
+@dataclass(frozen=True)
 class Document:
     doc_type: str
     filename: Optional[str] = None
