@@ -2,14 +2,7 @@
   "mcpServers": {
     "playwright": {
       "command": "npx",
-      "args": [
-        "-y",
-        "@mcp/server-playwright"
-      ],
-      "env": {
-        "PLAYWRIGHT_BROWSERS_PATH": "0"
-      },
-      "description": "Playwright MCP Server for automated UI validation and snapshot generation."
+      "args": ["@playwright/mcp@latest", "--headless"]
     }
   }
 }

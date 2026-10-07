@@ -1,0 +1,94 @@
+# Mirror of .github/workflows/ci.yml. Jobs skip themselves until the files they need exist
+# (e.g. the substrate-only MR before Sprint 1), so early merge requests stay green.
+stages: [test, e2e, review]
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+default:
+  interruptible: true
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  npm_config_cache: "$CI_PROJECT_DIR/.cache/npm"
+
+backend:
+  stage: test
+  image: python:3.11-slim
+  rules:
+    - exists: [requirements.txt]
+  cache:
+    key: pip
+    paths: [.cache/pip]
+  script:
+    - pip install -r requirements.txt
+    - lint-imports                                   # layering contracts (.importlinter)
+    - pytest --cov=src --cov-report=xml --cov-report=term --cov-fail-under=80
+    - python scripts/ac_coverage.py                  # every AC/NFR id in specs has a test
+  coverage: '/^TOTAL.*\s(\d+(?:\.\d+)?)%$/'
+  artifacts:
+    when: always
+    paths: [coverage.xml]
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+
+frontend:
+  stage: test
+  image: node:20
+  rules:
+    - exists: [frontend/package-lock.json]
+  cache:
+    key: npm
+    paths: [.cache/npm]
+  script:
+    - cd frontend
+    - npm ci
+    - npm test --if-present
+    - npm run build
+
+e2e:
+  stage: e2e                                          # runs only if the test stage passed
+  image: node:20-bookworm
+  rules:
+    - exists: [requirements.txt, frontend/package-lock.json]
+  script:
+    - apt-get update -qq && apt-get install -y -qq python3 python3-pip python3-venv
+    - python3 -m venv .venv && . .venv/bin/activate
+    - pip install -r requirements.txt
+    - cd frontend
+    - npm ci && npm run build
+    - npx playwright install --with-deps chromium
+    - npx playwright test                             # config starts `python -m src` via webServer
+  artifacts:
+    when: always
+    paths:
+      - frontend/playwright-report
+      - tests/e2e/snapshots
+
+# Claude Code review: runs only on merge requests labelled `claude-review` (keeps API spend predictable).
+# Needs masked CI/CD variable ANTHROPIC_API_KEY. Optional GITLAB_API_TOKEN posts the review as an MR note.
+claude-review:
+  stage: review
+  image: node:20
+  allow_failure: true
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS =~ /(^|,)claude-review(,|$)/'
+  script:
+    - npm install -g @anthropic-ai/claude-code
+    - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+    - |
+      claude -p "Review this merge request (diff: origin/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME...HEAD) against CLAUDE.md and the specs it touches. Check: spec conformance, AC-tagged tests, Decimal-only money, append-only policies/migrations/schedules, no PAN/Aadhaar in logs, layering, and that no hand-written production code bypassed the agent workflow. Output one concise review." \
+        --max-turns 6 --allowedTools "Read,Grep,Glob,Bash(git diff:*),Bash(git log:*)" | tee claude-review.md
+    - |
+      if [ -n "$GITLAB_API_TOKEN" ]; then
+        curl --fail -sS -X POST -H "PRIVATE-TOKEN: $GITLAB_API_TOKEN" \
+          --data-urlencode "body@claude-review.md" \
+          "$CI_API_V4_URL/projects/$CI_PROJECT_ID/merge_requests/$CI_MERGE_REQUEST_IID/notes" > /dev/null
+      fi
+  artifacts:
+    when: always
+    paths: [claude-review.md]

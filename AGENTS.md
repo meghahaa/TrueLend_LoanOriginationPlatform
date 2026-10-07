@@ -1,24 +1,26 @@
-# Agent Catalog & Table of Contents
+# AGENTS.md — Table of Contents
+Index only. Rules live in the linked files.
 
-This document lists all available AI agents operating in the TrueLend Loan Origination & Underwriting System substrate.
+## Specs (source of truth)
+- `specs/app_spec.md` — root spec, enums, API summary, seed data, sprint plan
+- `specs/product-catalog_spec.md` — AC-01, policy versioning, policy editor
+- `specs/application-intake_spec.md` — AC-02, AC-03, AC-05
+- `specs/underwriting_spec.md` — AC-04, AC-06, AC-10
+- `specs/repayment_spec.md` — AC-07, AC-09, EOD job
+- `specs/disbursement_spec.md` — AC-08
+- `specs/admin-portfolio_spec.md` — admin list, dashboard, audit
 
-## Base Harness Engine Agents
+## Domain and design docs
+- `docs/business-case.md` · `docs/architecture.md` · `docs/tdd.md` · `docs/postmortems/`
 
-| Agent Name | Location | Description |
-|---|---|---|
-| **planner** | `.claude/agents/planner.md` | Decomposes specifications into implementation tasks and sprint contracts. |
-| **generator** | `.claude/agents/generator.md` | Generates feature code, domain models, services, and controllers adhering to specs. |
-| **evaluator** | `.claude/agents/evaluator.md` | Evaluates generated code against acceptance criteria, NFRs, and Playwright UI tests. |
-| **security-reviewer** | `.claude/agents/security-reviewer.md` | Audits code for security vulnerabilities, PII leakage, and auth boundary enforcement. |
-| **test-engineer** | `.claude/agents/test-engineer.md` | Writes red unit tests, integration tests, and ArchUnit architecture assertions. |
-| **design-critic** | `.claude/agents/design-critic.md` | Evaluates UI layout responsiveness, accessibility, and visual structure. |
-| **ui-designer** | `.claude/agents/ui-designer.md` | Generates frontend components matching design specifications. |
+## Guidance (CLAUDE.md hierarchy)
+- `CLAUDE.md` · `src/CLAUDE.md` · `src/domain/CLAUDE.md` · `src/services/CLAUDE.md` · `src/repositories/CLAUDE.md` · `src/api/CLAUDE.md` · `frontend/CLAUDE.md` · `tests/CLAUDE.md`
 
-## Domain & Technical Custom Agents
+## Project substrate (`.claude/`)
+- Agents: `underwriting-agent`, `repayment-schedule-agent`, `policy-validator-agent` (plus harness agents)
+- Skills: `loan-policy-evaluator`, `repayment-schedule-builder`, `spec-to-test-generator` (plus harness skills)
+- Commands: `/ac-coverage`, `/new-policy-version`, `/post-mortem`, `/sprint-cost`
+- Hooks: `policy-immutability-check.js`, `money-precision-check.js`, `pii-log-check.js` (plus harness hooks)
 
-| Agent Name | Location | Description |
-|---|---|---|
-| **underwriting-agent** | `.claude/agents/underwriting-agent.md` | Evaluates underwriting policy rules, reason codes, auto-approval thresholds, and override auditing. |
-| **repayment-schedule-agent** | `.claude/agents/repayment-schedule-agent.md` | Generates fixed-point EMI amortization schedules, manages repayment postings, and recalculates DPD/NPA buckets. |
-| **policy-editor-agent** | `.claude/agents/policy-editor-agent.md` | Manages creation, versioning, threshold configuration, and immutability of loan policy rule sets. |
-| **policy-validator-agent** | `.claude/agents/policy-validator-agent.md` | Validates policy schema compliance, interest precision rules, and prevents breaking version migrations. |
+## Other
+- `.importlinter` layering contracts · `scripts/ac_coverage.py` AC traceability · `.github/workflows/ci.yml` + `.gitlab-ci.yml` (kept in parity) · `policies/` versioned policy files · `scripts/agent_sdk_runner.py` · `plugin.json` · `.mcp.json` · `sprint-contracts/` · `specs/reviews/`

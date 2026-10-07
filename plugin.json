@@ -1,27 +1,25 @@
 {
   "name": "truelend-lending-substrate",
   "version": "1.0.0",
-  "description": "TrueLend Loan Origination & Underwriting Substrate Plugin providing domain agents, skills, hooks, commands, and policy validation.",
-  "author": "AI-Native Engineer Capstone Team",
+  "description": "Lending-specific Claude Code substrate for the TrueLend loan origination platform: domain agents, skills, commands and guardrail hooks. Extends the Claude Harness Engine plugin.",
+  "author": { "name": "TrueLend Capstone" },
+  "license": "UNLICENSED",
+  "keywords": ["lending", "underwriting", "emi", "policy-as-code", "claude-code", "spec-driven"],
   "agents": [
-    ".claude/agents/underwriting-agent.md",
-    ".claude/agents/repayment-schedule-agent.md",
-    ".claude/agents/policy-editor-agent.md",
-    ".claude/agents/policy-validator-agent.md"
-  ],
-  "skills": [
-    ".claude/skills/loan-policy-evaluator",
-    ".claude/skills/repayment-schedule-builder",
-    ".claude/skills/policy-migration-validator",
-    ".claude/skills/archtest-author"
+    "./.claude/agents/underwriting-agent.md",
+    "./.claude/agents/repayment-schedule-agent.md",
+    "./.claude/agents/policy-validator-agent.md"
   ],
   "commands": [
-    ".claude/commands/validate-policy.md",
-    ".claude/commands/check-invariants.md"
+    "./.claude/commands/ac-coverage.md",
+    "./.claude/commands/new-policy-version.md",
+    "./.claude/commands/post-mortem.md",
+    "./.claude/commands/sprint-cost.md"
   ],
-  "hooks": [
-    ".claude/hooks/policy-immutability-check.sh",
-    ".claude/hooks/interest-precision-check.sh",
-    ".claude/hooks/repayment-invariant-check.sh"
-  ]
+  "skills": [
+    "./.claude/skills/loan-policy-evaluator",
+    "./.claude/skills/repayment-schedule-builder",
+    "./.claude/skills/spec-to-test-generator"
+  ],
+  "mcpServers": "./.mcp.json"
 }

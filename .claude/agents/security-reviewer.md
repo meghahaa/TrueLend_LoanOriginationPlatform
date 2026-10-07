@@ -7,6 +7,7 @@ tools:
   - Grep
   - Glob
   - Bash
+model: haiku
 ---
 
 # Security Reviewer Agent

@@ -1,73 +1,20 @@
-# Test-Driven Development (TDD) Discipline & Worked Evidence
+# TDD Discipline
+Every behaviour starts as a failing test that names its AC. Agents follow this; the reviewer rejects PRs that don't.
 
-## 1. Overview & Principles
-In TrueLend, all feature generation adheres strictly to the **Red-Green-Refactor** TDD cycle. Code generation by Claude Code agents is governed by the constraint:
-> **No implementation code is generated before unit tests exist and fail.**
+## Cycle and commit protocol
+1. **Red** — write the test from the spec AC; run it; confirm it fails for the right reason. Commit: `test(AC-05): red — income below minimum raises PolicyViolationException`.
+2. **Green** — smallest implementation to pass. Commit: `feat(AC-05): green — policy gate rejects low income`.
+3. **Refactor** — tidy with tests green. Commit: `refactor(AC-05): extract bounds check`.
+Red and green are separate commits so `git log` shows the pattern.
 
-Every test file maps explicitly to an Acceptance Criteria identifier (e.g., `@TestTag("AC-04")`).
+## Rules
+- Test names `test_ac05_<behaviour>` + `@pytest.mark.ac("AC-05")`; Vitest/Playwright titles start with the AC id.
+- Cover both sides of each boundary (e.g. income 24999.99 / 25000.00; DPD 29/30/59/60/89/90/179/180).
+- Use `FakeClock`, in-memory SQLite, synthetic data; no sleeps or network.
+- Never delete or loosen a failing test; fix the code or raise a spec question.
+- Property/grid tests for the EMI invariant (NFR-08).
+- Coverage ≥ 80 % (`--cov-fail-under=80`); `coverage.xml` committed.
+- `python scripts/ac_coverage.py` must report zero uncovered ids before a PR.
 
----
-
-## 2. Red-Green-Refactor Cycle Workflow
-1. **Red Stage**: Write unit/integration test assertions defining the contract, inputs, expected outputs, or exception types. Execute test runner to confirm failure (`AssertionError` or missing symbol).
-2. **Green Stage**: Generate minimal production implementation code to make the test pass. Verify test execution turns green.
-3. **Refactor Stage**: Clean up implementation, optimize performance, extract helper functions, ensure layering rules are respected, and re-run test suite to confirm green state.
-
----
-
-## 3. Worked TDD Example: AC-04 Underwriting Reason-Code Matrix
-
-### Step 1: Red Phase — Writing Failing Test (`UnderwritingEngineTest.java`)
-```java
-@Test
-@TestTag("AC-04")
-@DisplayName("Given score 750, income 50000, defaults 0 -> AUTO_APPROVE with AUTO_APPROVE_LOW_RISK")
-void testAutoApproveReasonCode() {
-    ApplicationProfile profile = new ApplicationProfile("APP-001", new BigDecimal("50000.00"), 750, 0);
-    PolicyVersion policy = PolicyVersion.load("policy-v1.0.json");
-
-    UnderwritingDecision decision = engine.evaluate(profile, policy);
-
-    assertThat(decision.getOutcome()).isEqualTo(DecisionOutcome.AUTO_APPROVE);
-    assertThat(decision.getReasonCode()).isEqualTo("AUTO_APPROVE_LOW_RISK");
-    assertThat(decision.getPolicyVersion()).isEqualTo("v1.0");
-}
-```
-*Run Output (Red)*: `Compilation error: Cannot resolve symbol UnderwritingEngine / Test Failure: expected AUTO_APPROVE but received null`.
-
-### Step 2: Green Phase — Writing Implementation (`UnderwritingEngine.java`)
-```java
-public UnderwritingDecision evaluate(ApplicationProfile profile, PolicyVersion policy) {
-    if (profile.getDefaultsCount() > 1 || profile.getScore() < policy.getAutoRejectScore()) {
-        return new UnderwritingDecision(DecisionOutcome.AUTO_REJECT, "AUTO_REJECT_HIGH_RISK", policy.getVersion());
-    }
-    if (profile.getIncome().compareTo(policy.getMinIncome()) < 0) {
-        return new UnderwritingDecision(DecisionOutcome.AUTO_REJECT, "INC_BELOW_MIN", policy.getVersion());
-    }
-    if (profile.getScore() >= policy.getAutoApproveScore() && profile.getDefaultsCount() == 0) {
-        return new UnderwritingDecision(DecisionOutcome.AUTO_APPROVE, "AUTO_APPROVE_LOW_RISK", policy.getVersion());
-    }
-    return new UnderwritingDecision(DecisionOutcome.MANUAL_REVIEW, "MANUAL_REVIEW_BORDERLINE", policy.getVersion());
-}
-```
-*Run Output (Green)*: `Tests run: 1, Passed: 1, Failures: 0, Elapsed time: 0.14s`.
-
-### Step 3: Refactor Phase
-Refactored rule evaluation logic into stateless policy rule handlers while preserving green test status.
-
----
-
-## 4. Test Matrix Mapping (10 Core AC Tests)
-
-| AC Identifier | Test File Path | Status |
-|---|---|---|
-| **AC-01** | `tests/domain/ProductCatalogServiceTest.java` | PASS |
-| **AC-02** | `tests/domain/ApplicationIntakeServiceTest.java` | PASS |
-| **AC-03** | `tests/services/CreditScoringStubTest.java` | PASS |
-| **AC-04** | `tests/services/UnderwritingEngineTest.java` | PASS |
-| **AC-05** | `tests/domain/PolicyViolationExceptionTest.java` | PASS |
-| **AC-06** | `tests/domain/DocumentVerificationServiceTest.java` | PASS |
-| **AC-07** | `tests/services/EMICalculatorTest.java` | PASS |
-| **AC-08** | `tests/services/DisbursementServiceTest.java` | PASS |
-| **AC-09** | `tests/services/RepaymentServiceTest.java` | PASS |
-| **AC-10** | `tests/controllers/AdminOverrideAuditTest.java` | PASS |
+## Evidence
+`git log --oneline --grep="red" ` and `--grep="green"` show the pairs; PR descriptions list the AC ids covered.
