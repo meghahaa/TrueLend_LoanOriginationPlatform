@@ -57,14 +57,14 @@ describe('Apply View Component', () => {
       expect(screen.getByTestId('product-select')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('Personal Loan')).toBeInTheDocument();
-    expect(screen.getByText('Vehicle Loan')).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /Personal Loan/i })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /Vehicle Loan/i })).toBeInTheDocument();
 
     // Verify required document checklist appears
-    expect(screen.getByText('ID_PROOF')).toBeInTheDocument();
-    expect(screen.getByText('ADDRESS_PROOF')).toBeInTheDocument();
-    expect(screen.getByText('SALARY_SLIP')).toBeInTheDocument();
-    expect(screen.getByText('BANK_STATEMENT')).toBeInTheDocument();
+    expect(screen.getByText(/ID_PROOF/i)).toBeInTheDocument();
+    expect(screen.getByText(/ADDRESS_PROOF/i)).toBeInTheDocument();
+    expect(screen.getByText(/SALARY_SLIP/i)).toBeInTheDocument();
+    expect(screen.getByText(/BANK_STATEMENT/i)).toBeInTheDocument();
   });
 
   it('submits loan application and displays result', async () => {
