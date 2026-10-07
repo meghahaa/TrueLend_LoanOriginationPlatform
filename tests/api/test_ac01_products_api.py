@@ -20,7 +20,7 @@ def _make_client(tmp_path):
     """Create a TestClient backed by a tmp_path copy of policies/."""
     shutil.copy("policies/loan_policy.v001.json", tmp_path / "loan_policy.v001.json")
     from src.main import create_app
-    app = create_app(policy_dir=str(tmp_path))
+    app = create_app(policy_dir=str(tmp_path), db_path=":memory:")
     return TestClient(app)
 
 

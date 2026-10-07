@@ -15,11 +15,18 @@ class Actor:
     role: str  # "CUSTOMER" | "UNDERWRITER" | "ADMIN"
 
 
-# Demo token map (synthetic data only)
+# Demo token map (synthetic data only — per app_spec.md §2)
 _DEMO_TOKENS: dict[str, Actor] = {
+    # Short aliases used in tests
     "customer-token": Actor(user_id="cust-001", role="CUSTOMER"),
+    "customer-token-2": Actor(user_id="cust-002", role="CUSTOMER"),
     "underwriter-token": Actor(user_id="uw-001", role="UNDERWRITER"),
     "admin-token": Actor(user_id="admin-001", role="ADMIN"),
+    # Spec-named tokens (app_spec.md §2)
+    "demo-customer-1": Actor(user_id="cust-001", role="CUSTOMER"),
+    "demo-customer-2": Actor(user_id="cust-002", role="CUSTOMER"),
+    "demo-underwriter-1": Actor(user_id="uw-001", role="UNDERWRITER"),
+    "demo-admin-1": Actor(user_id="adm-001", role="ADMIN"),
 }
 
 
