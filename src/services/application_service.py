@@ -135,6 +135,17 @@ class ApplicationService:
             documents=doc_list,
         )
 
+        if uw_result.status == "APPROVED":
+            from datetime import date
+            from src.domain.emi_calculator import generate_repayment_schedule
+            schedule = generate_repayment_schedule(
+                principal=inp.amount,
+                annual_rate_percent=product_policy.annual_rate_percent,
+                tenure_months=inp.tenure_months,
+                start_date=date.today(),
+            )
+            self._app_repo.save_schedule(app["id"], schedule)
+
         return app
 
     def get_application(self, actor: Actor, app_id: str) -> Dict[str, Any]:

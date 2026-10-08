@@ -147,6 +147,23 @@ class UnderwritingService:
             reason_codes=new_codes,
         )
 
+        if new_status == "APPROVED":
+            from datetime import date
+            from decimal import Decimal
+            from src.domain.emi_calculator import generate_repayment_schedule
+            policy = self._policy_repo.get_active_policy()
+            product_policy = policy.products[app["product"]]
+            schedule = generate_repayment_schedule(
+                principal=Decimal(app["amount"]),
+                annual_rate_percent=product_policy.annual_rate_percent,
+                tenure_months=int(app["tenure_months"]),
+                start_date=date.today(),
+            )
+            try:
+                self._app_repo.save_schedule(app_id, schedule)
+            except FileExistsError:
+                pass
+
         self._app_repo.write_audit(
             actor_user_id=actor.user_id,
             action=f"MANUAL_{action}",
@@ -196,6 +213,22 @@ class UnderwritingService:
             decision="AUTO_REJECT",   # original decision preserved
             reason_codes=new_codes,
         )
+
+        from datetime import date
+        from decimal import Decimal
+        from src.domain.emi_calculator import generate_repayment_schedule
+        policy = self._policy_repo.get_active_policy()
+        product_policy = policy.products[app["product"]]
+        schedule = generate_repayment_schedule(
+            principal=Decimal(app["amount"]),
+            annual_rate_percent=product_policy.annual_rate_percent,
+            tenure_months=int(app["tenure_months"]),
+            start_date=date.today(),
+        )
+        try:
+            self._app_repo.save_schedule(app_id, schedule)
+        except FileExistsError:
+            pass
 
         self._app_repo.write_audit(
             actor_user_id=actor.user_id,
