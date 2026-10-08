@@ -63,10 +63,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ token }) => {
   };
 
   // Metrics
-  const totalApps = applications.length;
-  const approvedCount = applications.filter((a) => a.status === 'APPROVED' || a.status === 'DISBURSED').length;
-  const rejectedCount = applications.filter((a) => a.status === 'REJECTED').length;
-  const reviewCount = applications.filter((a) => a.status === 'MANUAL_REVIEW').length;
+  const appList = Array.isArray(applications) ? applications : [];
+  const totalApps = appList.length;
+  const approvedCount = appList.filter((a) => a.status === 'APPROVED' || a.status === 'DISBURSED').length;
+  const rejectedCount = appList.filter((a) => a.status === 'REJECTED').length;
+  const reviewCount = appList.filter((a) => a.status === 'MANUAL_REVIEW').length;
 
   return (
     <div className="card" data-testid="dashboard-view">
@@ -152,10 +153,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ token }) => {
           </tr>
         </thead>
         <tbody>
-          {applications.map((app) => (
+          {appList.map((app) => (
             <tr key={app.id} data-testid={`admin-app-${app.id}`}>
               <td data-label="App ID"><strong>{app.id}</strong></td>
-              <td data-label="Applicant">{app.applicant_name || 'N/A'}</td>
+              <td data-label="Applicant">{app.applicant_name || (app as any).full_name || 'N/A'}</td>
               <td data-label="Product">{app.product}</td>
               <td data-label="Amount">INR {app.amount}</td>
               <td data-label="Status">

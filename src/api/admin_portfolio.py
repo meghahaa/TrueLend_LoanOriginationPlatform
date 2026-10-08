@@ -23,10 +23,13 @@ class ApplicationItemOut(BaseModel):
     amount: str
     tenure_months: int
     full_name: str
+    applicant_name: Optional[str] = None
     age: int
     monthly_income: str
     pan_masked: str
     aadhaar_masked: str
+    masked_pan: Optional[str] = None
+    masked_aadhaar: Optional[str] = None
     credit_history: str
     has_default: bool
     status: str
@@ -38,6 +41,8 @@ class ApplicationItemOut(BaseModel):
     delinquency_bucket: Optional[str] = None
     dpd: Optional[int] = 0
     disbursed_at: Optional[str] = None
+    documents: List[Any] = []
+
 
 
 class ApplicationsListResponse(BaseModel):
@@ -110,10 +115,13 @@ def make_admin_portfolio_router(portfolio_service: PortfolioService) -> APIRoute
                 amount=a["amount"],
                 tenure_months=a["tenure_months"],
                 full_name=a["full_name"],
+                applicant_name=a["full_name"],
                 age=a["age"],
                 monthly_income=a["monthly_income"],
                 pan_masked=a["pan_masked"],
                 aadhaar_masked=a["aadhaar_masked"],
+                masked_pan=a["pan_masked"],
+                masked_aadhaar=a["aadhaar_masked"],
                 credit_history=a["credit_history"],
                 has_default=a["has_default"],
                 status=a["status"],
@@ -125,6 +133,7 @@ def make_admin_portfolio_router(portfolio_service: PortfolioService) -> APIRoute
                 delinquency_bucket=a.get("delinquency_bucket"),
                 dpd=a.get("dpd", 0),
                 disbursed_at=a.get("disbursed_at"),
+                documents=a.get("documents", []),
             )
             for a in items
         ]

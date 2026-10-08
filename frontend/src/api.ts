@@ -269,7 +269,14 @@ export const getAdminApplications = async (
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error('Failed to fetch admin applications');
-  return res.json();
+  const data = await res.json();
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && Array.isArray(data.items)) {
+    return data.items;
+  }
+  return [];
 };
 
 export const overrideApplication = async (

@@ -131,6 +131,34 @@ class ApplicationRepository:
     def _migrate(self) -> None:
         self._conn.executescript(_SCHEMA)
         self._conn.commit()
+        self._apply_column_migrations()
+
+    def _apply_column_migrations(self) -> None:
+        """Idempotently add any new columns that may be missing (safe on existing DBs)."""
+        # Map: table -> list of (column_name, definition)
+        migrations = {
+            "applications": [
+                ("outstanding_principal", "TEXT"),
+                ("delinquency_bucket", "TEXT"),
+                ("dpd", "INTEGER DEFAULT 0"),
+                ("disbursed_at", "TEXT"),
+            ],
+            "audit_log": [
+                ("role", "TEXT"),
+            ],
+        }
+        for table, columns in migrations.items():
+            existing = {
+                row[1]
+                for row in self._conn.execute(f"PRAGMA table_info({table})")
+            }
+            for col_name, col_def in columns:
+                if col_name not in existing:
+                    self._conn.execute(
+                        f"ALTER TABLE {table} ADD COLUMN {col_name} {col_def}"
+                    )
+        self._conn.commit()
+
 
     # ------------------------------------------------------------------ #
     # Applications                                                         #
