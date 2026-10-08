@@ -1,4 +1,25 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
 import { defineConfig, devices } from '@playwright/test';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const frontendNodeModules = path.resolve(__dirname, 'node_modules');
+const rootNodeModules = path.resolve(__dirname, '..', 'node_modules');
+
+// Symlink frontend/node_modules to root node_modules so tests in tests/e2e/ resolve packages
+if (!fs.existsSync(rootNodeModules) && fs.existsSync(frontendNodeModules)) {
+  try {
+    fs.symlinkSync(frontendNodeModules, rootNodeModules, 'junction');
+  } catch {
+    // Ignore symlink errors
+  }
+}
+
+process.env.NODE_PATH = process.env.NODE_PATH
+  ? `${frontendNodeModules}:${process.env.NODE_PATH}`
+  : frontendNodeModules;
 
 export default defineConfig({
   testDir: '../tests/e2e',

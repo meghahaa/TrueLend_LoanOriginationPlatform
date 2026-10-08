@@ -61,6 +61,7 @@ e2e:
     - pip install -r requirements.txt
     - cd frontend
     - npm ci && npm run build
+    - ln -sfn frontend/node_modules ../node_modules
     - npx playwright install --with-deps chromium
     - npx playwright test                             # config starts `python -m src` via webServer
   artifacts:
