@@ -65,4 +65,10 @@ def create_app(
     def health() -> dict:
         return {"status": "ok"}
 
+    # Mount static frontend build if present
+    dist_dir = os.path.join(os.getcwd(), "frontend", "dist")
+    if os.path.isdir(dist_dir):
+        from starlette.staticfiles import StaticFiles
+        app.mount("/", StaticFiles(directory=dist_dir, html=True), name="frontend")
+
     return app
